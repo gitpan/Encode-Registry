@@ -1,0 +1,12 @@
+enc_reg.pod
+examples/cnvtxt.pl
+lib/Encode/Registry.pm
+lib/Encode/Win32.pm
+Make.PM
+Makefile.PL
+MANIFEST			This list of files
+META.yml
+pmake.bat
+Readme.txt
+scripts/encrem.pl
+Setup.bat
