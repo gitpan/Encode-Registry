@@ -1,16 +1,21 @@
 use ExtUtils::MakeMaker;
 
-@scripts = grep {-f } glob("scripts/*.*");
+@scripts = grep {-f } glob("Scripts/*");
 
 # incantation to enable MY::pm_to_blib later on
 push(@ExtUtils::MakeMaker::Overridable, qw(pm_to_blib)) if ($^O eq 'MSWin32');
 
+%extras = ();
+
+$extras{'PREREQ_PM'} = {'Win32::API' => 0} if ($^O eq 'MSWin32');
+
 WriteMakefile (
         NAME => "Encode::Registry",
-        VERSION => "0.12",
+        VERSION => "0.13",
         EXE_FILES => \@scripts,
         AUTHOR => "martin_hosken\@sil.org",
         ABSTRACT => "Encoding Registry module",
+        %extras,
         dist => { 'TO_UNIX' => 'perl -Mtounix -e "tounix(\"$(DISTVNAME)\")"' }
     );
 

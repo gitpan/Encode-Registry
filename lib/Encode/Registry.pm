@@ -7,7 +7,8 @@ use File::Spec;
 use MIME::Base64;
 require Exporter;
 
-our $VERSION = 0.04;    #   MJPH    19-FEB-2004     Map internal mappings to numeric perhaps
+our $VERSION = 0.05;    #   MJPH    31-JAN-2005     Use Encode for non Win32 default numeric mappings
+# our $VERSION = 0.04;    #   MJPH    19-FEB-2004     Map internal mappings to numeric perhaps
 # our $VERSION = 0.03;    #   MJPH    19-FEB-2004     Try harder to find a mapping
 
 our @ISA = qw(Exporter);
@@ -28,7 +29,7 @@ if ($] > 5.007)
 #    import Encode;
 }
 
-sub encode
+sub encode($$;$)
 {
     my ($name, $str, $check) = @_;
     my ($enc) = find_encoding($name, -check => $check);
@@ -42,7 +43,7 @@ sub encode
     return $enc->encode($str, $check);
 }
 
-sub decode
+sub decode($$;$)
 {
     my ($name, $str, $check) = @_;
     my ($enc) = find_encoding($name, -check => $check);
@@ -162,7 +163,7 @@ sub read_file
         return $fh;
     });
 
-    $DB::single = 1;
+#    $DB::single = 1;
     $xml->parsefile($fname);
     
     foreach $curr_font (keys %fonts)
@@ -186,7 +187,7 @@ sub add_handler
 }
 
 
-sub find_encoding
+sub find_encoding($;$)
 {
     my ($name, %opts) = @_;
     my (@h, $h, $res, $enc);
@@ -211,10 +212,12 @@ sub find_encoding
             }
         }
     }
-    elsif ($name =~ m/^[0-9]+$/o && eval { require Encode::Win32; })
+    elsif ($name =~ m/^[0-9]+$/o)
     {
-        $res = Encode::Win32->new($name);
-        return $res;
+        if ($^O eq 'MSWin32' and eval { require Encode::Win32; } and $res = Encode::Win32->new($name))
+        { return $res; }
+        else
+        { $name = "cp$name"; }
     }
     return Encode::find_encoding($name) if ($] > 5.007);
     return undef;
@@ -229,6 +232,22 @@ sub find_font
     else
     { return (undef, undef, undef); }
 }    
+
+sub find_encfont
+{
+    my ($encname, $fname, $dir, %opts) = @_;
+    my ($enc, $res);
+    my ($ftype) = $dir ? "rfonts" : "ffonts";
+    
+    while (defined $aliases{$encname})
+    { $encname = $aliases{$encname}; }
+
+    $enc = $encodings{$encname};
+    if ($enc && defined $mappings{$enc->[0]}{$ftype}{$fname})
+    { return $mappings{$enc->[0]}{$ftype}{$fname}; }
+    else
+    { return undef; }
+}
 
 sub internal_mappings
 {
